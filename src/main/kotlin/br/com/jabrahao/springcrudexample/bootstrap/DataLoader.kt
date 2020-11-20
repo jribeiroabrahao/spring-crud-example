@@ -1,11 +1,7 @@
 package br.com.jabrahao.springcrudexample.bootstrap
 
-import br.com.jabrahao.springcrudexample.model.Comment
-import br.com.jabrahao.springcrudexample.model.Post
-import br.com.jabrahao.springcrudexample.model.User
-import br.com.jabrahao.springcrudexample.repository.CommentRepository
-import br.com.jabrahao.springcrudexample.repository.PostRepository
-import br.com.jabrahao.springcrudexample.repository.UserRepository
+import br.com.jabrahao.springcrudexample.model.*
+import br.com.jabrahao.springcrudexample.repository.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kong.unirest.Unirest
@@ -20,61 +16,74 @@ class DataLoader: CommandLineRunner {
     @Autowired private lateinit var userRepository: UserRepository
     @Autowired private lateinit var postRepository: PostRepository
     @Autowired private lateinit var commentRepository: CommentRepository
+    @Autowired private lateinit var albumRepository: AlbumRepository
+    @Autowired private lateinit var photoRepository: PhotoRepository
 
     private val logger = LoggerFactory.getLogger(this.javaClass)
-    private val host = "https://jsonplaceholder.typicode.com"
 
     override fun run(vararg args: String?) {
         this.loadUsers()
         this.loadPosts()
         this.loadComments()
+        this.loadAlbums()
+        this.loadPhotos()
     }
 
-    fun loadUsers() {
+    fun loadData(path: String): String? {
         val response = Unirest
-                .get("$host/users")
+                .get("https://jsonplaceholder.typicode.com/$path")
                 .asString()
 
         if (response.status != 200) {
             logger.warn("Response Status: ${response.status}")
-            return
+            return null
         }
 
+        return response.body
+    }
+
+    fun loadUsers() {
+
+        val json = loadData("users") ?: return
         val mapper = ObjectMapper()
-        val users: List<User> = mapper.readValue(response.body)
+        val users: List<User> = mapper.readValue(json)
 
         userRepository.saveAll(users)
     }
 
     fun loadPosts() {
-        val response = Unirest
-                .get("$host/posts")
-                .asString()
 
-        if (response.status != 200) {
-            logger.warn("Response Status: ${response.status}")
-            return
-        }
-
+        val json = loadData("posts") ?: return
         val mapper = ObjectMapper()
-        val posts: List<Post> = mapper.readValue(response.body)
+        val posts: List<Post> = mapper.readValue(json)
 
         postRepository.saveAll(posts)
     }
 
     fun loadComments() {
-        val response = Unirest
-                .get("$host/comments")
-                .asString()
 
-        if (response.status != 200) {
-            logger.warn("Response Status: ${response.status}")
-            return
-        }
-
+        val json = loadData("comments") ?: return
         val mapper = ObjectMapper()
-        val comments: List<Comment> = mapper.readValue(response.body)
+        val comments: List<Comment> = mapper.readValue(json)
 
         commentRepository.saveAll(comments)
+    }
+
+    fun loadAlbums() {
+
+        val json = loadData("albums") ?: return
+        val mapper = ObjectMapper()
+        val albums: List<Album> = mapper.readValue(json)
+
+        albumRepository.saveAll(albums)
+    }
+
+    fun loadPhotos() {
+
+        val json = loadData("photos") ?: return
+        val mapper = ObjectMapper()
+        val photos: List<Photo> = mapper.readValue(json)
+
+        photoRepository.saveAll(photos)
     }
 }
